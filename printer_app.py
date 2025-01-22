@@ -90,16 +90,6 @@ class PrinterApp:
         # Create numpad
         self.create_numpad(numpad_frame)
         
-        # Add a quit button in the corner
-        quit_button = tk.Button(
-            root,
-            text="X",
-            command=root.quit,
-            font=('Nohemi-Bold', 16),
-            **self.button_style
-        )
-        quit_button.place(x=10, y=10)
-        
         # Add logo to bottom left of window
         logo_label = tk.Label(root, image=self.logo_photo, bg='white')
         logo_label.place(relx=0.02, rely=0.95, anchor='sw')
@@ -148,8 +138,8 @@ class PrinterApp:
                 # Add new timestamp
                 self.backspace_times.append(now)
                 
-                # Check if we have 5 presses within 5 seconds
-                if len(self.backspace_times) >= 5:
+                # Check if we have 3 presses within 5 seconds
+                if len(self.backspace_times) >= 3:
                     self.print_easter_egg()
                     self.backspace_times = []  # Reset after showing
             

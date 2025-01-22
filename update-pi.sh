@@ -1,4 +1,4 @@
-#!/bin/bash
+./#!/bin/bash
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -35,7 +35,7 @@ git push
 
 # SSH into Pi and update
 print_status "Connecting to Raspberry Pi and updating..."
-ssh pi@192.168.0.97 "
+sshpass -p "daviderbest" ssh -o StrictHostKeyChecking=no pi@192.168.0.97 "
 cd /home/pi/nexans-printer && \
 git pull && \
 # Create virtual environment if it doesn't exist
