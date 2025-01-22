@@ -161,7 +161,7 @@ class PrinterApp:
         
         # Get current time and finish time
         now = datetime.now()
-        finish_time = now + timedelta(hours=19)
+        finish_time = now + timedelta(hours=21)
         
         # Format times
         start_str = now.strftime("%d/%m-%Y %H:%M")
@@ -170,11 +170,26 @@ class PrinterApp:
         # Get batch number
         batch = self.batch_display.get()
         
-        # Add content
+        # Calculate positions
         y_spacing = 55  # Increased spacing for larger fonts
-        draw.text((50, 50), f"START: {start_str}", font=time_font, fill='black')
-        draw.text((50, 50 + y_spacing*2), f"FERDIG: {finish_str}", font=time_font, fill='black')
-        draw.text((50, 50 + y_spacing*4), f"BATCH: {batch}", font=title_font, fill='black')
+        left_margin = 50
+        right_margin = width - 50  # 50px from right edge
+        
+        # Draw labels on left
+        draw.text((left_margin, 50), "START:", font=time_font, fill='black')
+        draw.text((left_margin, 50 + y_spacing*2), "FERDIG:", font=time_font, fill='black')
+        draw.text((left_margin, 50 + y_spacing*4), "BATCH:", font=title_font, fill='black')
+        
+        # Right-align values
+        # Get text sizes for right alignment
+        start_width = time_font.getlength(start_str)
+        finish_width = time_font.getlength(finish_str)
+        batch_width = title_font.getlength(batch)
+        
+        # Draw values right-aligned
+        draw.text((right_margin - start_width, 50), start_str, font=time_font, fill='black')
+        draw.text((right_margin - finish_width, 50 + y_spacing*2), finish_str, font=time_font, fill='black')
+        draw.text((right_margin - batch_width, 50 + y_spacing*4), batch, font=title_font, fill='black')
         
         return image
 
