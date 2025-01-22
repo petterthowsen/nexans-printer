@@ -35,7 +35,7 @@ class SettingsScreen(tk.Frame):
         # Number of copies setting
         copies_label = tk.Label(
             settings_frame,
-            text="Number of copies:",
+            text="Antall Etikettter:",
             font=(self.style['font'], 24),
             bg=self.style['bg']
         )
