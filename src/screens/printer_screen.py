@@ -367,7 +367,9 @@ class PrinterScreen(tk.Frame):
         except:
             font = ImageFont.load_default()
         
-        message = "hva er det du holder på med du æ?"
+        
+
+        message = "Du er flink til å trykke!"
         
         # Center the text
         text_width = font.getlength(message)
