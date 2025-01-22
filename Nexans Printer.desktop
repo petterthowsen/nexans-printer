@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Nexans Printer
+Comment=Label printer application
+Exec=bash -c 'cd /home/pi/nexans-printer && source venv/bin/activate && ./main.py'
+Terminal=false
+Categories=Utility;
+Icon=/home/pi/nexans-printer/assets/Nexans_logo.svg.png
+Path=/home/pi/nexans-printer
