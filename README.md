@@ -68,7 +68,7 @@ The application will run in test mode by default. When the print button is press
 1. Connect your Brother QL-800 printer via USB
 2. Ensure the printer is recognized at `/dev/usb/lp0`
 3. Set proper permissions:
-   ```bash
+   ```bash1t
    sudo chmod 666 /dev/usb/lp0
    ```
 4. Edit `main.py` and set `TEST_MODE = False`
@@ -97,6 +97,49 @@ To modify the receipt layout, edit the `create_receipt_image` method in `printer
 2. **Permission Denied**: Run `sudo chmod 666 /dev/usb/lp0`
 3. **Font Issues**: Ensure the Nohemi font files are in the correct location under `assets/`
 4. **Tkinter Missing**: Install with `sudo apt-get install python3-tk`
+
+## Deployment
+
+The application is designed to run on a Raspberry Pi. A deployment script `update-pi.sh` is provided to easily update the Pi with your latest changes:
+
+1. Make your changes locally
+2. Run the deployment script:
+   ```bash
+   ./update-pi.sh
+   ```
+   The script will:
+   - Prompt for a commit message if there are changes
+   - Commit and push your changes to the repository
+   - SSH into the Pi and pull the latest changes
+
+### Prerequisites for Deployment
+- SSH access to the Raspberry Pi (configured at `pi@192.168.0.97`)
+- Git repository cloned at `/home/pi/nexans-printer` on the Pi
+- SSH key authentication set up (recommended)
+- X server running on the Pi (for GUI display)
+
+### Raspberry Pi Display Setup
+1. Ensure your Raspberry Pi is properly configured for display output:
+   ```bash
+   sudo raspi-config
+   ```
+   Navigate to: Interface Options -> VNC/Desktop GUI and enable it
+
+2. The display environment variable should be set automatically by the deployment script. If you still encounter display issues, manually set it:
+   ```bash
+   echo 'export DISPLAY=:0' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+3. If running the app manually on the Pi, ensure you're in a desktop session (not just SSH)
+
+### Common Pi Setup Issues
+- **No display name error**: This usually means the X server isn't running or `DISPLAY` isn't set
+  - Solution: Follow the display setup steps above
+  - Make sure you're running the app from the Pi's desktop environment
+- **Cannot open display**: Check if X server is running and display variable is set correctly
+  - Run `echo $DISPLAY` to verify it's set to `:0`
+  - Ensure you're not trying to run the GUI over SSH without X forwarding
 
 ## License
 
