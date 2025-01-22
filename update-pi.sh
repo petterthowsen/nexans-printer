@@ -54,7 +54,7 @@ if [ ! -d \"venv\" ]; then
 fi && \
 # Activate virtual environment and install dependencies
 source venv/bin/activate && \
-pip install brother_ql pillow tk
+pip install -r requirements.txt
 "
 
 print_status "Update complete! 🚀"
