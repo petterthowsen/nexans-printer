@@ -1,4 +1,17 @@
+# Environment and config
 .local.env
-temp_*.png
-__pycache__/
 venv/
+__pycache__/
+*.pyc
+
+# Temporary files
+temp_*.png
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# System
+.DS_Store
+Thumbs.db
