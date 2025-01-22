@@ -5,10 +5,12 @@ from brother_ql.conversion import convert
 from brother_ql.backends.helpers import send
 from brother_ql.raster import BrotherQLRaster
 
+from datetime import datetime, timedelta
+
 class PrinterApp:
     def __init__(self, root, test_mode=True):
         self.root = root
-        self.root.title("Receipt Printer")
+        self.root.title("Label Printer")
         self.test_mode = test_mode
         
         # Make the window fullscreen on Raspberry Pi
@@ -17,17 +19,40 @@ class PrinterApp:
         # Set white background
         self.root.configure(bg='white')
         
-        # Create a frame to center the button with white background
-        frame = tk.Frame(root, bg='white')
-        frame.place(relx=0.5, rely=0.5, anchor='center')
+        # Create main container
+        main_container = tk.Frame(root, bg='white')
+        main_container.pack(expand=True, fill='both', padx=20, pady=20)
+        
+        # Left side - Container for vertical centering
+        left_frame = tk.Frame(main_container, bg='white')
+        left_frame.pack(side='left', expand=True, fill='both', padx=(0, 20))
+        
+        # Center container vertically
+        center_frame = tk.Frame(left_frame, bg='white')
+        center_frame.place(relx=0.5, rely=0.5, anchor='center')
+        
+        # Batch number display
+        self.batch_display = tk.Entry(
+            center_frame,
+            font=('Nohemi-Bold', 36),
+            justify='center',
+            width=10,
+            bg='white',
+            fg='#ff1910',
+            relief='flat',
+            bd=2
+        )
+        self.batch_display.pack(pady=(0, 30))
+        self.batch_display.insert(0, '000')  # Default prefix
+        self.batch_display.config(state='readonly')
         
         # Button style configuration
         button_font = ('Nohemi-Bold', 24)
         button_color = '#ff1910'
-        button_style = {
+        self.button_style = {
             'bg': button_color,
             'fg': 'white',
-            'activebackground': '#cc140c',  # Slightly darker for pressed state
+            'activebackground': '#cc140c',
             'activeforeground': 'white',
             'relief': 'flat',
             'borderwidth': 0,
@@ -35,67 +60,146 @@ class PrinterApp:
             'pady': 15,
         }
         
-        # Create a large button suitable for touch screens
+        # Print button
         self.print_button = tk.Button(
-            frame,
-            text="PRINT RECEIPT",
+            center_frame,
+            text="PRINT LABEL",
             command=self.print_receipt,
             font=button_font,
-            **button_style
+            **self.button_style
         )
-        self.print_button.pack(pady=20)
+        self.print_button.pack()
         
-        # Add a quit button in the corner with matching style
+        # Right side - Numpad
+        numpad_frame = tk.Frame(main_container, bg='white')
+        numpad_frame.pack(side='right', padx=(20, 0))
+        
+        # Create numpad
+        self.create_numpad(numpad_frame)
+        
+        # Add a quit button in the corner
         quit_button = tk.Button(
             root,
             text="X",
             command=root.quit,
             font=('Nohemi-Bold', 16),
-            **button_style
+            **self.button_style
         )
         quit_button.place(x=10, y=10)
+        
+        # Initialize batch number and button state
+        self.current_batch = '000'
+        self.update_button_state()  # Initially disable button
+        
+    def create_numpad(self, parent):
+        numpad_layout = [
+            ['7', '8', '9'],
+            ['4', '5', '6'],
+            ['1', '2', '3'],
+            ['C', '0', '⌫']
+        ]
+        
+        for row_idx, row in enumerate(numpad_layout):
+            for col_idx, key in enumerate(row):
+                btn = tk.Button(
+                    parent,
+                    text=key,
+                    font=('Nohemi-Bold', 24),
+                    width=3,
+                    command=lambda k=key: self.numpad_press(k),
+                    **self.button_style
+                )
+                btn.grid(row=row_idx, column=col_idx, padx=5, pady=5)
+    
+    def update_button_state(self):
+        current = self.batch_display.get()
+        if len(current) == 10:  # Valid batch number (000 + 7 digits)
+            self.print_button.configure(
+                state='normal',
+                bg=self.button_style['bg'],
+                activebackground=self.button_style['activebackground']
+            )
+        else:
+            self.print_button.configure(
+                state='disabled',
+                bg='#cccccc',
+                activebackground='#cccccc'
+            )
+                
+    def numpad_press(self, key):
+        current = self.batch_display.get()
+        
+        if key == '⌫':  # Backspace
+            if len(current) > 3:  # Don't delete the '000' prefix
+                self.batch_display.config(state='normal')
+                self.batch_display.delete(len(current)-1, tk.END)
+                self.batch_display.config(state='readonly')
+        elif key == 'C':  # Clear
+            self.batch_display.config(state='normal')
+            self.batch_display.delete(3, tk.END)  # Keep the '000' prefix
+            self.batch_display.config(state='readonly')
+        elif len(current) < 10:  # Max length is 10 (000 + 7 digits)
+            self.batch_display.config(state='normal')
+            self.batch_display.insert(tk.END, key)
+            self.batch_display.config(state='readonly')
+            
+        # Update button state after any input change
+        self.update_button_state()
 
     def create_receipt_image(self):
         # Create a new image with white background
-        width = 696  # Width for 62mm tape
-        height = 500  # Adjust height as needed
+        width = 800  # Width for 70mm tape
+        height = 450  # ~40mm height
         image = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(image)
         
-        # Add text to the image
         try:
-            font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 60)
+            title_font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 52)  # 45 * 1.15
+            time_font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 40)   # 35 * 1.15
         except:
-            font = ImageFont.load_default()
-            
-        # Add receipt content
-        draw.text((50, 50), "Test Receipt", font=font, fill='black')
-        draw.text((50, 150), "Date: 2025-01-22", font=font, fill='black')
-        draw.text((50, 250), "Thank you!", font=font, fill='black')
+            title_font = time_font = ImageFont.load_default()
+        
+        # Get current time and finish time
+        now = datetime.now()
+        finish_time = now + timedelta(hours=19)
+        
+        # Format times
+        start_str = now.strftime("%d/%m-%Y %H:%M")
+        finish_str = finish_time.strftime("%d/%m-%Y %H:%M")
+        
+        # Get batch number
+        batch = self.batch_display.get()
+        
+        # Add content
+        y_spacing = 46  # Increased spacing to accommodate larger fonts
+        draw.text((50, 50), f"START: {start_str}", font=time_font, fill='black')
+        draw.text((50, 50 + y_spacing*2), f"FERDIG: {finish_str}", font=time_font, fill='black')
+        draw.text((50, 50 + y_spacing*4), f"BATCH: {batch}", font=title_font, fill='black')
         
         return image
 
     def show_printing_feedback(self):
-        # Disable and fade out the button
-        self.print_button.configure(state='disabled')
+        # Disable and gray out the button
+        self.print_button.configure(
+            state='disabled',
+            bg='#cccccc',
+            activebackground='#cccccc'
+        )
         
         # Create and show the printing message
         self.status_label = tk.Label(
             self.root,
             text="Printing...",
             font=('Nohemi-Bold', 28),
-            fg='#ff1910',
+            fg='#cccccc',
             bg='white'
         )
-        # Position it where the button is
+        # Position it above the button
         button_x = self.print_button.winfo_rootx() - self.root.winfo_rootx()
-        button_y = self.print_button.winfo_rooty() - self.root.winfo_rooty()
+        button_y = self.print_button.winfo_rooty() - self.root.winfo_rooty() - 50
         self.status_label.place(x=button_x, y=button_y)
         
-        # Hide the button
-        self.print_button.pack_forget()
-        
-        # Schedule the restoration of the button
+        # Schedule the restoration
         self.root.after(5000, self.restore_button)
 
     def restore_button(self):
@@ -103,9 +207,13 @@ class PrinterApp:
         if hasattr(self, 'status_label'):
             self.status_label.destroy()
         
-        # Show and enable the button
-        self.print_button.pack(pady=20)
-        self.print_button.configure(state='normal')
+        # Reset input field
+        self.batch_display.config(state='normal')
+        self.batch_display.delete(3, tk.END)  # Keep the '000' prefix
+        self.batch_display.config(state='readonly')
+        
+        # Update button state for the cleared input
+        self.update_button_state()
 
     def print_receipt(self):
         try:
@@ -136,7 +244,7 @@ class PrinterApp:
                 convert(
                     qlr=qlr,
                     images=[temp_path],
-                    label='62',  # 62mm endless label
+                    label='62',  # 70mm endless label
                     rotate='auto',
                     threshold=70.0,
                     dither=False,
