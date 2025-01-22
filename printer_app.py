@@ -136,7 +136,7 @@ class PrinterApp:
                 convert(
                     qlr=qlr,
                     images=[temp_path],
-                    label_size=label_size,
+                    label='62',  # 62mm endless label
                     rotate='auto',
                     threshold=70.0,
                     dither=False,

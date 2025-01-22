@@ -55,24 +55,28 @@ nexans-printer/
 
 ## Running the Application
 
-### Test Mode (No Printer Required)
-```bash
-./main.py
-```
-The application will run in test mode by default. When the print button is pressed, it will:
-- Save a preview image as temp_receipt.png
-- Show a "Printing..." message
-- Return to ready state after 5 seconds
+### Running the Application
 
-### Production Mode (With Printer)
+The application can be run in two modes:
+
+#### Test Mode (No Printer Required)
+```bash
+./main.py --test
+```
+When running in test mode:
+- No printer connection is required
+- Clicking print will save a preview image as temp_receipt.png
+- A "Printing..." message will be shown
+- The button returns to ready state after 5 seconds
+
+#### Production Mode (With Printer)
 1. Connect your Brother QL-800 printer via USB
 2. Ensure the printer is recognized at `/dev/usb/lp0`
 3. Set proper permissions:
-   ```bash1t
+   ```bash
    sudo chmod 666 /dev/usb/lp0
    ```
-4. Edit `main.py` and set `TEST_MODE = False`
-5. Run the application:
+4. Run the application:
    ```bash
    ./main.py
    ```
