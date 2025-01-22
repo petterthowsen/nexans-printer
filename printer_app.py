@@ -16,11 +16,15 @@ class PrinterApp:
         # Easter egg tracking
         self.backspace_times = []
         
-        # Load and resize logo
-        self.logo = Image.open("assets/Nexans_logo.svg.png")
+        # Load and create logo for GUI
+        logo_image = Image.open("assets/Nexans_logo.svg.png")
         # Resize logo to height of 40px while maintaining aspect ratio
-        logo_ratio = self.logo.width / self.logo.height
-        self.logo = self.logo.resize((int(40 * logo_ratio), 40), Image.Resampling.LANCZOS)
+        logo_ratio = logo_image.width / logo_image.height
+        logo_image = logo_image.resize((int(40 * logo_ratio), 40), Image.Resampling.LANCZOS)
+        # Save temporarily and load as PhotoImage
+        logo_image.save("temp_logo.png")
+        self.logo_photo = tk.PhotoImage(file="temp_logo.png")
+        os.remove("temp_logo.png")
         
         # Make the window fullscreen on Raspberry Pi
         self.root.attributes('-fullscreen', True)
@@ -95,6 +99,10 @@ class PrinterApp:
             **self.button_style
         )
         quit_button.place(x=10, y=10)
+        
+        # Add logo to bottom left of window
+        logo_label = tk.Label(root, image=self.logo_photo, bg='white')
+        logo_label.place(relx=0.02, rely=0.95, anchor='sw')
         
         # Initialize batch number and button state
         self.current_batch = '000'
@@ -220,9 +228,6 @@ class PrinterApp:
             batch_width = title_font.getlength(batch)
             draw.text((right_margin - batch_width, 50 + y_spacing*4), batch, font=title_font, fill='black')
         
-        # Add logo at bottom left
-        logo_y = height - logo_height - 10  # 10px padding from bottom
-        image.paste(self.logo, (left_margin, logo_y), self.logo if 'A' in self.logo.getbands() else None)
         
         return image
 
@@ -384,9 +389,6 @@ class PrinterApp:
         # Draw the message
         draw.text((x, y), message, font=font, fill='black')
         
-        # Add logo at bottom left
-        logo_y = height - self.logo.height - 10  # 10px padding from bottom
-        image.paste(self.logo, (50, logo_y), self.logo if 'A' in self.logo.getbands() else None)
         
         return image
             
