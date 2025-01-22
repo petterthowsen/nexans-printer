@@ -149,13 +149,13 @@ class PrinterApp:
     def create_receipt_image(self):
         # Create a new image with white background
         width = 800  # Width for 70mm tape
-        height = 450  # ~40mm height
+        height = 405  # ~36mm height (reduced by 10%)
         image = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(image)
         
         try:
-            title_font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 52)  # 45 * 1.15
-            time_font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 40)   # 35 * 1.15
+            title_font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 57)  # 52 * 1.1
+            time_font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 44)   # 40 * 1.1
         except:
             title_font = time_font = ImageFont.load_default()
         
@@ -171,7 +171,7 @@ class PrinterApp:
         batch = self.batch_display.get()
         
         # Add content
-        y_spacing = 46  # Increased spacing to accommodate larger fonts
+        y_spacing = 50  # Increased spacing for larger fonts
         draw.text((50, 50), f"START: {start_str}", font=time_font, fill='black')
         draw.text((50, 50 + y_spacing*2), f"FERDIG: {finish_str}", font=time_font, fill='black')
         draw.text((50, 50 + y_spacing*4), f"BATCH: {batch}", font=title_font, fill='black')
