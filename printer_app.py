@@ -13,6 +13,15 @@ class PrinterApp:
         self.root.title("Label Printer")
         self.test_mode = test_mode
         
+        # Easter egg tracking
+        self.backspace_times = []
+        
+        # Load and resize logo
+        self.logo = Image.open("assets/Nexans_logo.svg.png")
+        # Resize logo to height of 40px while maintaining aspect ratio
+        logo_ratio = self.logo.width / self.logo.height
+        self.logo = self.logo.resize((int(40 * logo_ratio), 40), Image.Resampling.LANCZOS)
+        
         # Make the window fullscreen on Raspberry Pi
         self.root.attributes('-fullscreen', True)
         
@@ -112,24 +121,30 @@ class PrinterApp:
                 btn.grid(row=row_idx, column=col_idx, padx=5, pady=5)
     
     def update_button_state(self):
-        current = self.batch_display.get()
-        if len(current) == 10:  # Valid batch number (000 + 7 digits)
-            self.print_button.configure(
-                state='normal',
-                bg=self.button_style['bg'],
-                activebackground=self.button_style['activebackground']
-            )
-        else:
-            self.print_button.configure(
-                state='disabled',
-                bg='#cccccc',
-                activebackground='#cccccc'
-            )
+        # Button is always enabled since batch number is optional
+        self.print_button.configure(
+            state='normal',
+            bg=self.button_style['bg'],
+            activebackground=self.button_style['activebackground']
+        )
                 
     def numpad_press(self, key):
         current = self.batch_display.get()
         
         if key == '⌫':  # Backspace
+            if current == '000':  # Easter egg check
+                now = datetime.now()
+                # Remove old timestamps (older than 5 seconds)
+                self.backspace_times = [t for t in self.backspace_times 
+                                      if (now - t).total_seconds() <= 5]
+                # Add new timestamp
+                self.backspace_times.append(now)
+                
+                # Check if we have 5 presses within 5 seconds
+                if len(self.backspace_times) >= 5:
+                    self.print_easter_egg()
+                    self.backspace_times = []  # Reset after showing
+            
             if len(current) > 3:  # Don't delete the '000' prefix
                 self.batch_display.config(state='normal')
                 self.batch_display.delete(len(current)-1, tk.END)
@@ -147,9 +162,23 @@ class PrinterApp:
         self.update_button_state()
 
     def create_receipt_image(self):
-        # Create a new image with white background
+        # Calculate height based on content
         width = 800  # Width for 70mm tape
-        height = 365  # ~32mm height (reduced by another 10%)
+        y_spacing = 55  # Spacing between lines
+        logo_height = 40  # Height for the logo
+        
+        # Base height includes padding and two lines (START and FERDIG)
+        base_height = 50 + (y_spacing * 2) + 50  # top padding + two lines + bottom padding
+        
+        # Add extra height if batch number is present
+        batch = self.batch_display.get()
+        has_batch = batch.strip() != '000'
+        content_height = base_height + (y_spacing * 2 if has_batch else 0)
+        
+        # Add extra space for logo at bottom
+        height = content_height + logo_height + 20  # 20px padding for logo
+        
+        # Create image with calculated height
         image = Image.new('RGB', (width, height), 'white')
         draw = ImageDraw.Draw(image)
         
@@ -171,25 +200,29 @@ class PrinterApp:
         batch = self.batch_display.get()
         
         # Calculate positions
-        y_spacing = 55  # Increased spacing for larger fonts
+        y_spacing = 55  # Spacing between lines
         left_margin = 50
         right_margin = width - 50  # 50px from right edge
         
-        # Draw labels on left
+        # Draw times
         draw.text((left_margin, 50), "START:", font=time_font, fill='black')
         draw.text((left_margin, 50 + y_spacing*2), "FERDIG:", font=time_font, fill='black')
-        draw.text((left_margin, 50 + y_spacing*4), "BATCH:", font=title_font, fill='black')
         
-        # Right-align values
-        # Get text sizes for right alignment
+        # Right-align time values
         start_width = time_font.getlength(start_str)
         finish_width = time_font.getlength(finish_str)
-        batch_width = title_font.getlength(batch)
-        
-        # Draw values right-aligned
         draw.text((right_margin - start_width, 50), start_str, font=time_font, fill='black')
         draw.text((right_margin - finish_width, 50 + y_spacing*2), finish_str, font=time_font, fill='black')
-        draw.text((right_margin - batch_width, 50 + y_spacing*4), batch, font=title_font, fill='black')
+        
+        # Only show batch if entered
+        if batch.strip() != '000':  # If there's more than just the prefix
+            draw.text((left_margin, 50 + y_spacing*4), "BATCH:", font=title_font, fill='black')
+            batch_width = title_font.getlength(batch)
+            draw.text((right_margin - batch_width, 50 + y_spacing*4), batch, font=title_font, fill='black')
+        
+        # Add logo at bottom left
+        logo_y = height - logo_height - 10  # 10px padding from bottom
+        image.paste(self.logo, (left_margin, logo_y), self.logo if 'A' in self.logo.getbands() else None)
         
         return image
 
@@ -235,16 +268,17 @@ class PrinterApp:
             # Create receipt image
             receipt_image = self.create_receipt_image()
             
-            # Save temporary image
-            temp_path = "temp_receipt.png"
-            receipt_image.save(temp_path)
+            # Save temporary images
+            temp_paths = ["temp_receipt_1.png", "temp_receipt_2.png"]
+            for temp_path in temp_paths:
+                receipt_image.save(temp_path)
             
             # Show printing feedback
             self.show_printing_feedback()
             
             if self.test_mode:
-                print("Test Mode: Receipt would be printed")
-                print(f"Receipt image saved as {temp_path} for preview")
+                print("Test Mode: Two identical receipts would be printed")
+                print(f"Receipt previews saved as {', '.join(temp_paths)}")
             else:
                 # Real printing mode
                 # Printer settings
@@ -255,31 +289,34 @@ class PrinterApp:
                 qlr = BrotherQLRaster(printer_model)
                 qlr.exception_on_warning = True
                 
-                # Convert image to label format
-                convert(
-                    qlr=qlr,
-                    images=[temp_path],
-                    label='62',  # 70mm endless label
-                    rotate='auto',
-                    threshold=70.0,
-                    dither=False,
-                    compress=False,
-                    red=False,
-                    dpi_600=False,
-                    hq=True,
-                    cut=True
-                )
+                # Print two identical labels
+                for temp_path in temp_paths:
+                    # Convert image to label format
+                    convert(
+                        qlr=qlr,
+                        images=[temp_path],
+                        label='62',  # 70mm endless label
+                        rotate='auto',
+                        threshold=70.0,
+                        dither=False,
+                        compress=False,
+                        red=False,
+                        dpi_600=False,
+                        hq=True,
+                        cut=True
+                    )
+                    
+                    # Send to printer using linux_kernel backend
+                    send(
+                        instructions=qlr.data,
+                        printer_identifier='/dev/usb/lp0',
+                        backend_identifier='linux_kernel',
+                        blocking=True
+                    )
                 
-                # Send to printer using linux_kernel backend
-                send(
-                    instructions=qlr.data,
-                    printer_identifier='/dev/usb/lp0',
-                    backend_identifier='linux_kernel',
-                    blocking=True
-                )
-                
-                # Clean up temporary file after printing
-                os.remove(temp_path)
+                # Clean up temporary files after printing
+                for temp_path in temp_paths:
+                    os.remove(temp_path)
             
         except Exception as e:
             error_msg = str(e)
@@ -324,3 +361,84 @@ class PrinterApp:
             
             # Restore the print button
             self.restore_button()
+            
+    def create_easter_egg_image(self):
+        # Create a new image with white background - shorter height for single line
+        width = 800  # Width for 70mm tape
+        height = 150  # Shorter height for single line
+        image = Image.new('RGB', (width, height), 'white')
+        draw = ImageDraw.Draw(image)
+        
+        try:
+            font = ImageFont.truetype("assets/Nohemi/OpenType-TT/Nohemi-Bold.ttf", 48)
+        except:
+            font = ImageFont.load_default()
+        
+        message = "hva er det du holder på med du æ?"
+        
+        # Center the text
+        text_width = font.getlength(message)
+        x = (width - text_width) / 2
+        y = (height - 48) / 2  # Vertically center based on font size
+        
+        # Draw the message
+        draw.text((x, y), message, font=font, fill='black')
+        
+        # Add logo at bottom left
+        logo_y = height - self.logo.height - 10  # 10px padding from bottom
+        image.paste(self.logo, (50, logo_y), self.logo if 'A' in self.logo.getbands() else None)
+        
+        return image
+            
+    def print_easter_egg(self):
+        try:
+            # Create easter egg image
+            easter_egg_image = self.create_easter_egg_image()
+            
+            # Save temporary image
+            temp_path = "temp_easter_egg.png"
+            easter_egg_image.save(temp_path)
+            
+            # Show printing feedback
+            self.show_printing_feedback()
+            
+            if self.test_mode:
+                print("Test Mode: Easter egg would be printed")
+                print(f"Easter egg preview saved as {temp_path}")
+            else:
+                # Real printing mode
+                # Printer settings
+                printer_model = 'QL-800'
+                
+                # Create the label instructions
+                qlr = BrotherQLRaster(printer_model)
+                qlr.exception_on_warning = True
+                
+                # Convert image to label format
+                convert(
+                    qlr=qlr,
+                    images=[temp_path],
+                    label='62',
+                    rotate='auto',
+                    threshold=70.0,
+                    dither=False,
+                    compress=False,
+                    red=False,
+                    dpi_600=False,
+                    hq=True,
+                    cut=True
+                )
+                
+                # Send to printer
+                send(
+                    instructions=qlr.data,
+                    printer_identifier='/dev/usb/lp0',
+                    backend_identifier='linux_kernel',
+                    blocking=True
+                )
+                
+                # Clean up
+                os.remove(temp_path)
+            
+        except Exception as e:
+            print(f"Easter egg error: {str(e)}")
