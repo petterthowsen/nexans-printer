@@ -1,0 +1,4 @@
+.local.env
+temp_*.png
+__pycache__/
+venv/

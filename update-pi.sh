@@ -1,5 +1,14 @@
 ./#!/bin/bash
 
+# Load environment variables
+if [ -f .local.env ]; then
+    source .local.env
+else
+    echo "Error: .local.env file not found"
+    echo "Please create .local.env with PI_PASSWORD=\"your_password\""
+    exit 1
+fi
+
 # Colors for output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -35,7 +44,7 @@ git push
 
 # SSH into Pi and update
 print_status "Connecting to Raspberry Pi and updating..."
-sshpass -p "daviderbest" ssh -o StrictHostKeyChecking=no pi@192.168.0.97 "
+sshpass -p "$PI_PASSWORD" ssh -o StrictHostKeyChecking=no pi@192.168.0.97 "
 cd /home/pi/nexans-printer && \
 git pull && \
 # Create virtual environment if it doesn't exist
