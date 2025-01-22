@@ -252,8 +252,8 @@ class PrinterApp:
         button_y = self.print_button.winfo_rooty() - self.root.winfo_rooty() - 50
         self.status_label.place(x=button_x, y=button_y)
         
-        # Schedule the restoration
-        self.root.after(5000, self.restore_button)
+        # Schedule the restoration after 3 seconds
+        self.root.after(3000, self.restore_button)
 
     def restore_button(self):
         # Remove the status label
@@ -273,17 +273,16 @@ class PrinterApp:
             # Create receipt image
             receipt_image = self.create_receipt_image()
             
-            # Save temporary images
-            temp_paths = ["temp_receipt_1.png", "temp_receipt_2.png"]
-            for temp_path in temp_paths:
-                receipt_image.save(temp_path)
+            # Save temporary image
+            temp_path = "temp_receipt.png"
+            receipt_image.save(temp_path)
             
             # Show printing feedback
             self.show_printing_feedback()
             
             if self.test_mode:
                 print("Test Mode: Two identical receipts would be printed")
-                print(f"Receipt previews saved as {', '.join(temp_paths)}")
+                print(f"Receipt preview saved as {temp_path}")
             else:
                 # Real printing mode
                 # Printer settings
@@ -294,8 +293,8 @@ class PrinterApp:
                 qlr = BrotherQLRaster(printer_model)
                 qlr.exception_on_warning = True
                 
-                # Print two identical labels
-                for temp_path in temp_paths:
+                # Print the same label twice
+                for _ in range(2):
                     # Convert image to label format
                     convert(
                         qlr=qlr,
@@ -319,9 +318,8 @@ class PrinterApp:
                         blocking=True
                     )
                 
-                # Clean up temporary files after printing
-                for temp_path in temp_paths:
-                    os.remove(temp_path)
+                # Clean up temporary file after printing
+                os.remove(temp_path)
             
         except Exception as e:
             error_msg = str(e)
