@@ -293,26 +293,29 @@ class PrinterApp:
                 qlr = BrotherQLRaster(printer_model)
                 qlr.exception_on_warning = True
                 
+                # Convert image to label format once
+                convert(
+                    qlr=qlr,
+                    images=[temp_path],
+                    label='62',  # 70mm endless label
+                    rotate='auto',
+                    threshold=70.0,
+                    dither=False,
+                    compress=False,
+                    red=False,
+                    dpi_600=False,
+                    hq=True,
+                    cut=True
+                )
+                
+                # Store instructions
+                instructions = qlr.data
+                
                 # Print the same label twice
                 for _ in range(2):
-                    # Convert image to label format
-                    convert(
-                        qlr=qlr,
-                        images=[temp_path],
-                        label='62',  # 70mm endless label
-                        rotate='auto',
-                        threshold=70.0,
-                        dither=False,
-                        compress=False,
-                        red=False,
-                        dpi_600=False,
-                        hq=True,
-                        cut=True
-                    )
-                    
                     # Send to printer using linux_kernel backend
                     send(
-                        instructions=qlr.data,
+                        instructions=instructions,
                         printer_identifier='/dev/usb/lp0',
                         backend_identifier='linux_kernel',
                         blocking=True
