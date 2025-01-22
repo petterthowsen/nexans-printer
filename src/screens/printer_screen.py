@@ -143,14 +143,14 @@ class PrinterScreen(tk.Frame):
         if key == '⌫':  # Backspace
             if current == '000':  # Easter egg check
                 now = datetime.now()
-                # Remove old timestamps (older than 5 seconds)
+                # Remove old timestamps (older than 3 seconds)
                 self.backspace_times = [t for t in self.backspace_times 
-                                      if (now - t).total_seconds() <= 5]
+                                      if (now - t).total_seconds() <= 3]
                 # Add new timestamp
                 self.backspace_times.append(now)
                 
-                # Check if we have 3 presses within 5 seconds
-                if len(self.backspace_times) >= 3:
+                # Check if we have 5 presses within 3 seconds
+                if len(self.backspace_times) >= 5:
                     self.print_easter_egg()
                     self.backspace_times = []  # Reset after showing
             
@@ -369,7 +369,7 @@ class PrinterScreen(tk.Frame):
         
         
 
-        message = "Du er flink til å trykke!"
+        message = "Slutt å tull!"
         
         # Center the text
         text_width = font.getlength(message)
