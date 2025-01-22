@@ -76,6 +76,20 @@ class PrinterScreen(tk.Frame):
         # Create numpad
         self.create_numpad(numpad_frame)
         
+        # Load and create logo for GUI
+        logo_image = Image.open("assets/Nexans_logo.svg.png")
+        # Resize logo to height of 40px while maintaining aspect ratio
+        logo_ratio = logo_image.width / logo_image.height
+        logo_image = logo_image.resize((int(40 * logo_ratio), 40), Image.Resampling.LANCZOS)
+        # Save temporarily and load as PhotoImage
+        logo_image.save("temp_logo.png")
+        self.logo_photo = tk.PhotoImage(file="temp_logo.png")
+        os.remove("temp_logo.png")
+        
+        # Add logo to bottom left of window
+        logo_label = tk.Label(self, image=self.logo_photo, bg='white')
+        logo_label.place(relx=0.02, rely=0.95, anchor='sw')
+        
         # Settings button in top right
         settings_button = tk.Button(
             self,
