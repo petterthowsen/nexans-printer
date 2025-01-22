@@ -159,4 +159,45 @@ class PrinterApp:
                 os.remove(temp_path)
             
         except Exception as e:
-            print(f"Error: {str(e)}")
+            error_msg = str(e)
+            print(f"Error: {error_msg}")
+            
+            # Show error in GUI
+            error_popup = tk.Toplevel(self.root)
+            error_popup.title("Error")
+            
+            # Center the popup
+            error_popup.geometry("400x150")
+            error_popup.geometry(f"+{self.root.winfo_x() + 100}+{self.root.winfo_y() + 100}")
+            
+            # Add error message
+            if "Permission denied" in error_msg and "/dev/usb/lp0" in error_msg:
+                msg = "Printer permission denied.\nPlease run:\nsudo chmod 666 /dev/usb/lp0"
+            else:
+                msg = f"Error: {error_msg}"
+                
+            label = tk.Label(
+                error_popup,
+                text=msg,
+                pady=20,
+                font=('Nohemi-Bold', 14),
+                fg='#ff1910'
+            )
+            label.pack()
+            
+            # Add OK button
+            ok_button = tk.Button(
+                error_popup,
+                text="OK",
+                command=error_popup.destroy,
+                font=('Nohemi-Bold', 12),
+                bg='#ff1910',
+                fg='white',
+                relief='flat',
+                padx=20,
+                pady=5
+            )
+            ok_button.pack(pady=10)
+            
+            # Restore the print button
+            self.restore_button()
