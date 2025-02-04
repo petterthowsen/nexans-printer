@@ -34,9 +34,9 @@ cat > ~/Desktop/Nexans\ Printer.desktop << EOL
 Version=1.0
 Name=Nexans Printer
 Comment=Label printer application
-Exec=~/nexans-printer/start.sh
-Path=~/nexans-printer
-Icon=~/nexans-printer/assets/Nexans_logo.svg.png
+Exec=/home/$USER/nexans-printer/start.sh
+Path=/home/$USER/nexans-printer
+Icon=/home/$USER/nexans-printer/assets/Nexans_logo.svg.png
 Terminal=false
 Type=Application
 Categories=Utility;
