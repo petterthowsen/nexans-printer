@@ -14,7 +14,7 @@ sudo apt-get install -y python3-venv git
 echo "Cloning repository..."
 cd ~
 rm -rf nexans-printer
-git clone https://github.com/petter/nexans-printer.git
+git clone https://github.com/petterthowsen/nexans-printer.git
 cd nexans-printer
 
 # Setup Python virtual environment
