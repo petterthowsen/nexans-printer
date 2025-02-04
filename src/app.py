@@ -13,14 +13,13 @@ class App(tk.Tk):
         # Configure window
         self.title("Label Printer")
         
-        # Set window to fullscreen
-        self.attributes('-fullscreen', True)
+        # Set explicit geometry for Raspberry Pi's 800x480 screen
+        self.geometry("800x480+0+0")
+        self.minsize(800, 480)
+        self.maxsize(800, 480)
         
-        # Set explicit geometry and maximize
-        self.geometry("{0}x{1}+0+0".format(
-            self.winfo_screenwidth(),
-            self.winfo_screenheight()
-        ))
+        # Force fullscreen
+        self.attributes('-fullscreen', True)
         self.wm_attributes('-topmost', True)
         
         self.configure(bg='white')
