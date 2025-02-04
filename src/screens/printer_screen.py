@@ -38,6 +38,16 @@ class PrinterScreen(tk.Frame):
         center_frame = tk.Frame(left_frame, bg='white')
         center_frame.place(relx=0.5, rely=0.5, anchor='center')
         
+        # Batch number label
+        batch_label = tk.Label(
+            center_frame,
+            text="Scan/Tast inn Batch Nummer:",
+            font=(self.style['font'], 18),
+            bg='white',
+            fg='black'
+        )
+        batch_label.pack(pady=(0, 10))
+
         # Batch number display
         self.batch_display = tk.Entry(
             center_frame,
@@ -50,8 +60,12 @@ class PrinterScreen(tk.Frame):
             bd=2
         )
         self.batch_display.pack(pady=(0, 30))
-        self.batch_display.insert(0, '000')  # Default prefix
-        self.batch_display.config(state='readonly')
+        
+        # Bind Enter key to print
+        self.batch_display.bind('<Return>', lambda e: self.print_receipt())
+        
+        # Set focus to the input field
+        self.batch_display.focus_set()
         
         # Print button
         self.print_button = tk.Button(
@@ -154,21 +168,20 @@ class PrinterScreen(tk.Frame):
                     self.print_easter_egg()
                     self.backspace_times = []  # Reset after showing
             
-            if len(current) > 3:  # Don't delete the '000' prefix
-                self.batch_display.config(state='normal')
-                self.batch_display.delete(len(current)-1, tk.END)
-                self.batch_display.config(state='readonly')
+            self.batch_display.config(state='normal')
+            self.batch_display.delete(len(current)-1, tk.END)
         elif key == 'C':  # Clear
             self.batch_display.config(state='normal')
-            self.batch_display.delete(3, tk.END)  # Keep the '000' prefix
-            self.batch_display.config(state='readonly')
-        elif len(current) < 10:  # Max length is 10 (000 + 7 digits)
+            self.batch_display.delete(0, tk.END)
+        elif len(current) < 10:  # Max length is 10 digits
             self.batch_display.config(state='normal')
             self.batch_display.insert(tk.END, key)
-            self.batch_display.config(state='readonly')
             
         # Update button state after any input change
         self.update_button_state()
+        
+        # Ensure input field maintains focus after any button press
+        self.batch_display.focus_set()
 
     def create_receipt_image(self):
         # Create a new image with white background
@@ -210,8 +223,8 @@ class PrinterScreen(tk.Frame):
         draw.text((right_margin - start_width, 50), start_str, font=time_font, fill='black')
         draw.text((right_margin - finish_width, 50 + y_spacing*2), finish_str, font=time_font, fill='black')
         
-        # Only show batch if entered
-        if batch.strip() != '000':  # If there's more than just the prefix
+        # Show batch if entered
+        if batch.strip():  # If there's any batch number
             draw.text((left_margin, 50 + y_spacing*4), "BATCH:", font=title_font, fill='black')
             batch_width = title_font.getlength(batch)
             draw.text((right_margin - batch_width, 50 + y_spacing*4), batch, font=title_font, fill='black')
@@ -249,11 +262,13 @@ class PrinterScreen(tk.Frame):
         
         # Reset input field
         self.batch_display.config(state='normal')
-        self.batch_display.delete(3, tk.END)  # Keep the '000' prefix
-        self.batch_display.config(state='readonly')
+        self.batch_display.delete(0, tk.END)
         
         # Update button state for the cleared input
         self.update_button_state()
+        
+        # Ensure input field maintains focus
+        self.batch_display.focus_set()
 
     def print_receipt(self):
         try:
@@ -367,8 +382,6 @@ class PrinterScreen(tk.Frame):
         except:
             font = ImageFont.load_default()
         
-        
-
         message = "Slutt å tull!"
         
         # Center the text
