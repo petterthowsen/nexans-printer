@@ -12,7 +12,17 @@ class App(tk.Tk):
         
         # Configure window
         self.title("Label Printer")
+        
+        # Set window to fullscreen
         self.attributes('-fullscreen', True)
+        
+        # Set explicit geometry and maximize
+        self.geometry("{0}x{1}+0+0".format(
+            self.winfo_screenwidth(),
+            self.winfo_screenheight()
+        ))
+        self.wm_attributes('-topmost', True)
+        
         self.configure(bg='white')
         
         # Initialize screens dictionary
